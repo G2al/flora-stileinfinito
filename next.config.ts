@@ -14,10 +14,10 @@ const withSerwist = withSerwistInit({
   additionalPrecacheEntries: [
     "/offline",
     "/brand/logo.png",
-    "/icons/icon-192.png",
-    "/icons/icon-512.png",
-    "/icons/icon-maskable-512.png",
-    "/icons/apple-touch-icon.png",
+    "/app-icons/icon-192.png",
+    "/app-icons/icon-512.png",
+    "/app-icons/icon-maskable-512.png",
+    "/app-icons/apple-touch-icon.png",
   ].map((url) => ({ url, revision })),
 });
 
