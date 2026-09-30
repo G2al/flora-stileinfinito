@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -147,7 +148,16 @@ function ClientForm({ client, onDone, onDelete }: { client: Client | null; onDon
 }
 
 export default function ClientsPage() {
-  const [search, setSearch] = useState("");
+  // useSearchParams richiede Suspense nel build statico.
+  return (
+    <Suspense fallback={<ListSkeleton />}>
+      <ClientsContent />
+    </Suspense>
+  );
+}
+
+function ClientsContent() {
+  const [search, setSearch] = useState(useSearchParams().get("q") ?? "");
   const [page, setPage] = useState(1);
   const q = useDebouncedValue(search.trim(), 300);
   const { data, isLoading, isError, isFetching, refetch } = useClients({ q, page, per_page: 20 });

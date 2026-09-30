@@ -1,5 +1,6 @@
 import {
   CalendarDaysIcon,
+  ChartColumnIcon,
   ClipboardListIcon,
   ScissorsIcon,
   UserRoundIcon,
@@ -19,6 +20,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/clients", label: "Clienti", icon: UsersIcon },
   { href: "/services", label: "Servizi", icon: ScissorsIcon },
   { href: "/staff", label: "Staff", icon: UserRoundIcon },
+  { href: "/stats", label: "Statistiche", icon: ChartColumnIcon },
 ];
 
 /** Voci mostrate nella barra in basso su mobile; le altre stanno sotto "Altro". */

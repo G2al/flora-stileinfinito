@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { ClipboardListIcon, PlusIcon, SearchIcon, Trash2Icon } from "lucide-react";
 import { useAppointments, useDeleteAppointment } from "@/api/appointments";
@@ -47,9 +48,23 @@ function sortAppointments(list: Appointment[], sort: Sort) {
   });
 }
 
+const STATUS_VALUES: AppointmentStatus[] = ["pending", "confirmed", "completed", "cancelled"];
+
 export default function AppointmentsPage() {
+  // useSearchParams richiede Suspense nel build statico.
+  return (
+    <Suspense fallback={<ListSkeleton rows={6} />}>
+      <AppointmentsContent />
+    </Suspense>
+  );
+}
+
+function AppointmentsContent() {
+  const initialStatus = useSearchParams().get("status");
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<AppointmentStatus | "">("");
+  const [status, setStatus] = useState<AppointmentStatus | "">(
+    STATUS_VALUES.includes(initialStatus as AppointmentStatus) ? (initialStatus as AppointmentStatus) : "",
+  );
   const [staffId, setStaffId] = useState("");
   const [sort, setSort] = useState<Sort>("date_desc");
 
