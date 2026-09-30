@@ -164,7 +164,10 @@ export function TimeGrid({ view, anchor, appointments, height, showStaff, onNewA
           startTime: BUSINESS_HOURS.open,
           endTime: BUSINESS_HOURS.close,
         }}
-        dayMaxEvents={3}
+        dayMaxEvents={view === "month" ? true : 3}
+        expandRows
+        dayMaxEventRows={false}
+        fixedWeekCount={false}
         editable
         eventDurationEditable={false}
         eventLongPressDelay={400}

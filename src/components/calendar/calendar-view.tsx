@@ -101,12 +101,14 @@ export function CalendarView({ onNewAt, onEdit }: Props) {
 
   return (
     <section aria-label="Calendario" className="flex flex-col gap-2.5">
+      {/* Barra strumenti: su desktop tutto su una riga per lasciare spazio al calendario */}
+      <div className="flex flex-col gap-2.5 md:flex-row md:items-center md:gap-3">
       {/* Navigazione */}
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5 md:shrink-0">
         <Button variant="outline" size="icon" aria-label="Precedente" onClick={() => go(-1)}>
           <ChevronLeftIcon />
         </Button>
-        <div className="relative min-w-0 flex-1 text-center">
+        <div className="relative min-w-0 flex-1 text-center md:min-w-44 md:flex-none">
           <h2 className="truncate text-base font-semibold capitalize md:text-lg">{titleFor(view, anchor)}</h2>
           {isFetching ? (
             <Loader2Icon
@@ -138,7 +140,7 @@ export function CalendarView({ onNewAt, onEdit }: Props) {
       <div
         role="group"
         aria-label="Vista calendario"
-        className="grid grid-cols-4 gap-0.5 rounded-lg border bg-muted/40 p-0.5 md:ml-auto md:w-96"
+        className="grid grid-cols-4 gap-0.5 rounded-lg border bg-muted/40 p-0.5 md:order-3 md:w-80 md:shrink-0"
       >
         {views.map((v) => (
           <button
@@ -172,7 +174,7 @@ export function CalendarView({ onNewAt, onEdit }: Props) {
           role="group"
           aria-label="Filtra per operatrice"
           data-no-swipe
-          className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-0.5 [scrollbar-width:none] md:mx-0 md:px-0"
+          className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-0.5 [scrollbar-width:none] md:order-2 md:mx-0 md:min-w-0 md:flex-1 md:px-0 md:pb-0"
         >
           {[{ id: null as number | null, name: "Tutte" }, ...staffQuery.data].map((s) => {
             const active = staffFilter === s.id;
@@ -204,6 +206,8 @@ export function CalendarView({ onNewAt, onEdit }: Props) {
           })}
         </div>
       ) : null}
+
+      </div>
 
       {/* Contenuto */}
       <div ref={fillRef} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} style={{ touchAction: "pan-y" }}>

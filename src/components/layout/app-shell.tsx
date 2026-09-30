@@ -15,6 +15,7 @@ import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { AppointmentFormDialog } from "@/components/appointments/appointment-form";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { BottomNav } from "@/components/layout/bottom-nav";
+import { Sidebar } from "@/components/layout/sidebar";
 import { MOBILE_PRIMARY, NAV_ITEMS, isActive } from "@/components/layout/nav-items";
 
 function useLogout() {
@@ -44,39 +45,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-dvh">
-      {/* Sidebar desktop */}
-      <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r bg-sidebar p-4 md:flex">
-        <Link href="/" className="mb-6 block px-1">
-          <BrandLogo className="h-20" priority />
-        </Link>
-        <nav className="flex flex-1 flex-col gap-1" aria-label="Navigazione principale">
-          {NAV_ITEMS.map((item) => {
-            const active = isActive(pathname, item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors",
-                  active
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                )}
-              >
-                <item.icon className="size-5" />
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="flex items-center justify-between border-t pt-3">
-          <Button variant="ghost" className="justify-start gap-2 text-muted-foreground" onClick={() => setLogoutOpen(true)}>
-            <LogOutIcon className="size-4" /> Esci
-          </Button>
-          <ThemeToggle />
-        </div>
-      </aside>
+      <Sidebar onLogout={() => setLogoutOpen(true)} />
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Header mobile */}

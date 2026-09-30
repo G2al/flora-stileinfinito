@@ -2,6 +2,7 @@
 
 import { CalendarClockIcon, CalendarPlusIcon } from "lucide-react";
 import { useToSchedule } from "@/api/appointments";
+import { cn } from "@/lib/utils";
 import { formatDateTimeShort } from "@/lib/dates";
 import { clientFullName } from "@/lib/format";
 import type { Appointment } from "@/types";
@@ -40,7 +41,7 @@ export function ToScheduleList({ onSchedule, onEdit, embedded }: Props) {
       ) : (
         <>
           {/* Mobile: card */}
-          <ul className="flex flex-col gap-2 md:hidden">
+          <ul className={cn("flex flex-col gap-2", !embedded && "md:hidden")}>
             {data.map((a) => (
               <li key={a.id} className="rounded-xl border bg-card p-3">
                 <button type="button" onClick={() => onEdit(a)} className="block w-full text-left">
@@ -58,7 +59,7 @@ export function ToScheduleList({ onSchedule, onEdit, embedded }: Props) {
           </ul>
 
           {/* Desktop: tabella */}
-          <div className="hidden overflow-hidden rounded-xl border bg-card md:block">
+          <div className={cn("hidden overflow-hidden rounded-xl border bg-card", !embedded && "md:block")}>
             <table className="w-full text-sm">
               <thead className="bg-muted/50 text-left text-xs text-muted-foreground uppercase">
                 <tr>
