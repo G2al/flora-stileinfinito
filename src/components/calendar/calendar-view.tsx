@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { format, isSameDay, startOfDay } from "date-fns";
 import { ChevronLeftIcon, ChevronRightIcon, Loader2Icon } from "lucide-react";
 import { useAppointments } from "@/api/appointments";
@@ -74,6 +74,13 @@ export function CalendarView({ onNewAt, onEdit }: Props) {
 
   const go = (dir: 1 | -1) => setAnchor((a) => stepAnchor(view, a, dir));
   const goToday = () => setAnchor(startOfDay(new Date()));
+
+  // La barra in basso, toccando "Calendario" quando è già aperto, salta a oggi.
+  useEffect(() => {
+    const onToday = () => setAnchor(startOfDay(new Date()));
+    window.addEventListener("calendar:today", onToday);
+    return () => window.removeEventListener("calendar:today", onToday);
+  }, []);
   const isTimeView = view === "day" || view === "3days" || view === "week";
   const showCounts = view === "day";
 

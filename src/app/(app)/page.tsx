@@ -67,17 +67,6 @@ export default function HomePage() {
         </ResponsiveDialog>
       </div>
 
-      {/* FAB mobile */}
-      <Button
-        size="icon-lg"
-        aria-label="Nuovo appuntamento"
-        onClick={() => openNew()}
-        style={{ bottom: "calc(4.5rem + env(safe-area-inset-bottom))" }}
-        className="fixed right-4 z-30 size-12 rounded-full shadow-lg md:hidden"
-      >
-        <PlusIcon className="size-6" />
-      </Button>
-
       <AppointmentFormDialog
         open={form.open}
         onOpenChange={(open) => setForm((f) => ({ ...f, open }))}

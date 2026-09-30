@@ -5,13 +5,16 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { LogOutIcon, MenuIcon } from "lucide-react";
+import { LogOutIcon } from "lucide-react";
 import { logout } from "@/api/auth";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { BrandLogo } from "@/components/layout/brand-logo";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { AppointmentFormDialog } from "@/components/appointments/appointment-form";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { BottomNav } from "@/components/layout/bottom-nav";
 import { MOBILE_PRIMARY, NAV_ITEMS, isActive } from "@/components/layout/nav-items";
 
 function useLogout() {
@@ -33,8 +36,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const doLogout = useLogout();
   const [moreOpen, setMoreOpen] = useState(false);
+  const [logoutOpen, setLogoutOpen] = useState(false);
+  const [newOpen, setNewOpen] = useState(false);
 
-  const primary = NAV_ITEMS.filter((i) => MOBILE_PRIMARY.includes(i.href));
   const secondary = NAV_ITEMS.filter((i) => !MOBILE_PRIMARY.includes(i.href));
   const moreActive = secondary.some((i) => isActive(pathname, i.href));
 
@@ -67,7 +71,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
         <div className="flex items-center justify-between border-t pt-3">
-          <Button variant="ghost" className="justify-start gap-2 text-muted-foreground" onClick={doLogout}>
+          <Button variant="ghost" className="justify-start gap-2 text-muted-foreground" onClick={() => setLogoutOpen(true)}>
             <LogOutIcon className="size-4" /> Esci
           </Button>
           <ThemeToggle />
@@ -80,47 +84,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Link href="/" aria-label="Home">
             <BrandLogo className="h-10" priority />
           </Link>
-          <ThemeToggle />
+          <div className="flex items-center">
+            <ThemeToggle />
+            <Button variant="ghost" size="icon" aria-label="Esci" onClick={() => setLogoutOpen(true)}>
+              <LogOutIcon className="size-5" />
+            </Button>
+          </div>
         </header>
 
-        <main className="min-w-0 flex-1 px-4 pt-4 pb-28 md:px-6 md:pt-6 md:pb-10">{children}</main>
+        <main className="min-w-0 flex-1 px-4 pt-4 pb-32 md:px-6 md:pt-6 md:pb-10">{children}</main>
       </div>
 
-      {/* Barra in basso mobile */}
-      <nav
-        id="bottom-nav"
-        aria-label="Navigazione principale"
-        className="pb-safe fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t bg-background/95 backdrop-blur md:hidden"
-      >
-        {primary.map((item) => {
-          const active = isActive(pathname, item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              aria-current={active ? "page" : undefined}
-              className={cn(
-                "flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-medium",
-                active ? "text-primary" : "text-muted-foreground",
-              )}
-            >
-              <item.icon className="size-5" />
-              {item.label}
-            </Link>
-          );
-        })}
-        <button
-          type="button"
-          onClick={() => setMoreOpen(true)}
-          className={cn(
-            "flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-medium",
-            moreActive ? "text-primary" : "text-muted-foreground",
-          )}
-        >
-          <MenuIcon className="size-5" />
-          Altro
-        </button>
-      </nav>
+      <BottomNav moreActive={moreActive} onMore={() => setMoreOpen(true)} onNew={() => setNewOpen(true)} />
 
       <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
         <SheetContent side="bottom" className="pb-safe rounded-t-2xl p-4">
@@ -141,20 +116,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 {item.label}
               </Link>
             ))}
-            <button
-              type="button"
-              onClick={() => {
-                setMoreOpen(false);
-                doLogout();
-              }}
-              className="flex h-12 items-center gap-3 rounded-lg px-3 text-base font-medium text-destructive hover:bg-muted"
-            >
-              <LogOutIcon className="size-5" />
-              Esci
-            </button>
           </div>
         </SheetContent>
       </Sheet>
+
+      <ConfirmDialog
+        open={logoutOpen}
+        onOpenChange={setLogoutOpen}
+        title="Vuoi uscire?"
+        description="Dovrai accedere di nuovo per usare l'app."
+        confirmLabel="Esci"
+        onConfirm={() => {
+          setLogoutOpen(false);
+          doLogout();
+        }}
+      />
+
+      <AppointmentFormDialog open={newOpen} onOpenChange={setNewOpen} />
     </div>
   );
 }
