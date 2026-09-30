@@ -70,7 +70,6 @@ function ScheduleForm({ appointment, onDone }: { appointment: Appointment; onDon
           type="datetime-local"
           step={900}
           min={nowDateTimeLocal()}
-          autoFocus
           aria-invalid={!!errors.scheduledAt}
           {...register("scheduledAt")}
         />

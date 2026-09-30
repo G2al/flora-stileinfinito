@@ -41,7 +41,7 @@ function StaffForm({ staff, onDone }: { staff: Staff | null; onDone: () => void 
   return (
     <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
       <Field label="Nome" htmlFor="staff-name" error={errors.name?.message}>
-        <Input id="staff-name" autoFocus autoComplete="off" aria-invalid={!!errors.name} {...register("name")} />
+        <Input id="staff-name" autoComplete="off" aria-invalid={!!errors.name} {...register("name")} />
       </Field>
       <Button type="submit" size="lg" disabled={save.isPending}>
         {save.isPending ? "Salvataggio…" : "Salva"}

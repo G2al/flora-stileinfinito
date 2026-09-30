@@ -59,7 +59,7 @@ function ServiceForm({ service, onDone }: { service: Service | null; onDone: () 
   return (
     <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
       <Field label="Nome" htmlFor="service-name" error={errors.name?.message}>
-        <Input id="service-name" autoFocus autoComplete="off" aria-invalid={!!errors.name} {...register("name")} />
+        <Input id="service-name" autoComplete="off" aria-invalid={!!errors.name} {...register("name")} />
       </Field>
       <Field label="Durata (minuti)" htmlFor="service-duration" error={errors.duration_minutes?.message}>
         <Input
