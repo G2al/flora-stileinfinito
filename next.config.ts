@@ -13,7 +13,8 @@ const withSerwist = withSerwistInit({
   // evita di mettere in precache i sorgenti pesanti del logo).
   additionalPrecacheEntries: [
     "/offline",
-    "/brand/logo.png",
+    "/brand/logo-for-mode-white.png",
+    "/brand/logo-for-mode-dark.png",
     "/app-icons/icon-192.png",
     "/app-icons/icon-512.png",
     "/app-icons/icon-maskable-512.png",
