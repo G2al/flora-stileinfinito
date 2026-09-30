@@ -18,6 +18,7 @@ import { Field } from "@/components/shared/page-parts";
 const schema = z.object({
   email: z.string().min(1, "Inserisci l'email").email("Email non valida"),
   password: z.string().min(1, "Inserisci la password"),
+  remember: z.boolean(),
 });
 type Values = z.infer<typeof schema>;
 
@@ -32,7 +33,7 @@ export default function LoginPage() {
     handleSubmit,
     setError,
     formState: { errors, isSubmitting },
-  } = useForm<Values>({ resolver: zodResolver(schema), defaultValues: { email: "", password: "" } });
+  } = useForm<Values>({ resolver: zodResolver(schema), defaultValues: { email: "", password: "", remember: true } });
 
   useEffect(() => {
     if (auth === "in") router.replace("/");
@@ -43,7 +44,7 @@ export default function LoginPage() {
   async function onSubmit(values: Values) {
     setFormError(null);
     try {
-      await login(values.email, values.password);
+      await login(values.email, values.password, values.remember);
       router.replace("/");
     } catch (error) {
       const fields = getFieldErrors(error);
@@ -107,6 +108,11 @@ export default function LoginPage() {
               </button>
             </div>
           </Field>
+
+          <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm">
+            <input type="checkbox" className="size-5 accent-[var(--primary)]" {...register("remember")} />
+            Ricordami su questo dispositivo
+          </label>
 
           <Button type="submit" size="lg" disabled={isSubmitting}>
             {isSubmitting ? "Accesso in corso…" : "Accedi"}
