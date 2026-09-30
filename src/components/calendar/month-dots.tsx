@@ -12,11 +12,10 @@ import { apptColor, dayKey, defaultSlot, groupByDay, weekStart } from "@/compone
 
 const WEEKDAYS = ["L", "M", "M", "G", "V", "S", "D"];
 
-/** Mese per telefono: puntini colorati per giorno e, sotto, l'elenco del giorno scelto. */
+/** Mese per telefono: puntini colorati per giorno e, sotto, l'elenco del giorno scelto (scorre con la pagina). */
 export function MonthDots({
   anchor,
   appointments,
-  height,
   onSelectDay,
   onEdit,
   onNewAt,
@@ -24,7 +23,6 @@ export function MonthDots({
 }: {
   anchor: Date;
   appointments: Appointment[];
-  height: number;
   onSelectDay: (d: Date) => void;
   onEdit: (a: Appointment) => void;
   onNewAt: (d: Date) => void;
@@ -38,7 +36,7 @@ export function MonthDots({
   const slot = defaultSlot(anchor);
 
   return (
-    <div className="flex flex-col gap-2" style={{ height }}>
+    <div className="flex flex-col gap-2">
       <div className="rounded-xl border bg-card p-1.5">
         <div className="grid grid-cols-7 pb-1 text-center text-[11px] font-medium text-muted-foreground">
           {WEEKDAYS.map((w, i) => (
@@ -100,7 +98,8 @@ export function MonthDots({
         ) : null}
       </div>
 
-      <ul className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pb-2">
+      {/* Nessuno scroll interno: scorre tutta la pagina. Il padding evita la barra in basso. */}
+      <ul className="flex flex-col gap-2 pb-24">
         {dayList.length === 0 ? (
           <li className="rounded-xl border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
             Nessun appuntamento in questo giorno.

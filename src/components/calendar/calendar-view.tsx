@@ -214,7 +214,6 @@ export function CalendarView({ onNewAt, onEdit }: Props) {
           <MonthDots
             anchor={anchor}
             appointments={visible}
-            height={height}
             onSelectDay={setAnchor}
             onEdit={onEdit}
             onNewAt={onNewAt}
