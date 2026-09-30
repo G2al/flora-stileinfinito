@@ -44,21 +44,23 @@ export function PeriodPicker({ preset, from, to, error, onPreset, onCustom }: Pr
       </div>
 
       {preset === "custom" ? (
-        <div className="grid grid-cols-2 gap-3 sm:max-w-md">
-          <label className="flex flex-col gap-1.5 text-sm font-medium">
+        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-3 sm:max-w-md">
+          <label className="flex min-w-0 flex-col gap-1.5 text-sm font-medium">
             Dal
             <Input
               type="date"
+              className="min-w-0 max-w-full appearance-none"
               value={from}
               max={to || today}
               onChange={(e) => onCustom({ from: e.target.value })}
               aria-invalid={!!error}
             />
           </label>
-          <label className="flex flex-col gap-1.5 text-sm font-medium">
+          <label className="flex min-w-0 flex-col gap-1.5 text-sm font-medium">
             Al
             <Input
               type="date"
+              className="min-w-0 max-w-full appearance-none"
               value={to}
               min={from || undefined}
               onChange={(e) => onCustom({ to: e.target.value })}

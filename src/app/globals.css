@@ -175,3 +175,19 @@ body { -webkit-tap-highlight-color: transparent; }
 
 /* Vista giorno: l'intera colonna "oggi" non va colorata */
 .fc .fc-timeGridDay-view .fc-day-today { background: transparent; }
+
+/* App installata: niente zoom a pellizco o doppio tap */
+html, body { touch-action: pan-x pan-y; -webkit-text-size-adjust: 100%; }
+
+/* Input data/ora: su iOS hanno una larghezza propria che sfonda le griglie */
+input[type="date"], input[type="datetime-local"], input[type="time"] {
+  min-width: 0;
+  max-width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+}
+input[type="date"]::-webkit-date-and-time-value,
+input[type="datetime-local"]::-webkit-date-and-time-value {
+  text-align: left;
+  min-height: 1.5em;
+}
