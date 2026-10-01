@@ -32,6 +32,7 @@ import { Field, ListSkeleton } from "@/components/shared/page-parts";
 import { ResponsiveDialog } from "@/components/shared/responsive-dialog";
 import { ServiceChip } from "@/components/shared/service-chip";
 import { STATUS_LABELS } from "@/components/shared/status-badge";
+import { WhatsAppBadge } from "@/components/shared/whatsapp-badge";
 
 const STATUSES: AppointmentStatus[] = ["pending", "confirmed", "completed", "cancelled"];
 
@@ -222,17 +223,10 @@ function AppointmentFormBody({ appointment, defaultDate, onDone }: FormProps) {
     }
   }
 
-  async function submit(values: Values, sendWhatsApp: boolean) {
+  async function submit(values: Values) {
     const saved = await persist(values);
     if (!saved) return;
     toast.success(isEdit ? "Appuntamento aggiornato" : saved.scheduled_at ? "Appuntamento confermato" : "Appuntamento salvato tra quelli da programmare");
-    if (sendWhatsApp && saved.scheduled_at) {
-      try {
-        openExternal(await fetchWhatsAppUrl(saved.id, "confirmation"));
-      } catch (error) {
-        toast.error(getErrorMessage(error, "Non riesco a preparare il messaggio WhatsApp."));
-      }
-    }
     onDone();
   }
 
@@ -266,7 +260,7 @@ function AppointmentFormBody({ appointment, defaultDate, onDone }: FormProps) {
   const hasDate = !!startDate;
 
   return (
-    <form onSubmit={handleSubmit((v) => submit(v, false))} noValidate className="flex flex-col gap-5">
+    <form onSubmit={handleSubmit((v) => submit(v))} noValidate className="flex flex-col gap-5">
       {/* Cliente */}
       <Field
         label="Cliente *"
@@ -450,17 +444,6 @@ function AppointmentFormBody({ appointment, defaultDate, onDone }: FormProps) {
         <Button type="submit" size="lg" disabled={pending}>
           {pending ? "Salvataggio…" : "Salva"}
         </Button>
-        {hasDate ? (
-          <Button
-            type="button"
-            size="lg"
-            variant="secondary"
-            disabled={pending}
-            onClick={handleSubmit((v) => submit(v, true))}
-          >
-            <MessageCircleIcon /> Salva e invia WhatsApp
-          </Button>
-        ) : null}
       </div>
 
       {isEdit ? (
@@ -486,7 +469,9 @@ function AppointmentFormBody({ appointment, defaultDate, onDone }: FormProps) {
             </Button>
           </div>
           {appointment?.whatsapp_sent ? (
-            <p className="text-center text-xs text-muted-foreground">Conferma WhatsApp già inviata.</p>
+            <p className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+              <WhatsAppBadge sent /> Conferma WhatsApp già inviata.
+            </p>
           ) : null}
           <Button type="button" variant="destructive" size="lg" onClick={() => setConfirmDelete(true)}>
             <Trash2Icon /> Elimina appuntamento

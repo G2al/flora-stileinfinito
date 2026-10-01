@@ -1,6 +1,7 @@
 import { formatTime } from "@/lib/dates";
 import { clientFullName } from "@/lib/format";
 import type { Appointment } from "@/types";
+import { WhatsAppBadge } from "@/components/shared/whatsapp-badge";
 import { apptColor } from "@/components/calendar/calendar-utils";
 
 /** Riga di appuntamento per liste (agenda e dettaglio giorno del mese). */
@@ -21,11 +22,14 @@ export function AppointmentRow({ appointment: a, onClick }: { appointment: Appoi
         <span className="block truncate font-medium">{clientFullName(a.client)}</span>
         <span className="block truncate text-sm text-muted-foreground">{services || "Nessun servizio"}</span>
       </span>
-      {a.staff ? (
-        <span className="self-start rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
-          {a.staff.name}
-        </span>
-      ) : null}
+      <span className="flex shrink-0 flex-col items-end gap-1 self-start">
+        {a.staff ? (
+          <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+            {a.staff.name}
+          </span>
+        ) : null}
+        <WhatsAppBadge sent={a.whatsapp_sent} compact />
+      </span>
     </button>
   );
 }

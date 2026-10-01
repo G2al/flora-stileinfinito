@@ -15,6 +15,7 @@ import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { EmptyState, ErrorState, ListSkeleton, PageHeader } from "@/components/shared/page-parts";
 import { ServiceBadge } from "@/components/shared/service-chip";
 import { STATUS_LABELS, StatusBadge } from "@/components/shared/status-badge";
+import { WhatsAppBadge } from "@/components/shared/whatsapp-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -174,7 +175,10 @@ function AppointmentsContent() {
                         <p className="truncate font-medium">{clientFullName(a.client)}</p>
                         <p className="text-sm text-muted-foreground">{a.staff?.name ?? "—"}</p>
                       </div>
-                      <StatusBadge status={a.status} />
+                      <div className="flex shrink-0 flex-col items-end gap-1">
+                        <StatusBadge status={a.status} />
+                        <WhatsAppBadge sent={a.whatsapp_sent} />
+                      </div>
                     </div>
                     <p className={`mt-1.5 text-sm font-medium ${a.scheduled_at ? "" : "text-amber-600 dark:text-amber-400"}`}>
                       {formatRelativeDateTime(a.scheduled_at)}
@@ -227,7 +231,10 @@ function AppointmentsContent() {
                       {formatRelativeDateTime(a.scheduled_at)}
                     </td>
                     <td className="px-4 py-3">
-                      <StatusBadge status={a.status} />
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <StatusBadge status={a.status} />
+                        <WhatsAppBadge sent={a.whatsapp_sent} compact />
+                      </div>
                     </td>
                     <td className="px-2 py-1 text-right">
                       <Button

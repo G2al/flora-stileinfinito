@@ -16,6 +16,7 @@ import { AppointmentFormDialog } from "@/components/appointments/appointment-for
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { Sidebar } from "@/components/layout/sidebar";
+import { useDelayedAppointmentsRefresh } from "@/hooks/use-delayed-refresh";
 import { MOBILE_PRIMARY, NAV_ITEMS, isActive } from "@/components/layout/nav-items";
 
 function useLogout() {
@@ -36,6 +37,7 @@ function useLogout() {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const doLogout = useLogout();
+  useDelayedAppointmentsRefresh();
   const [moreOpen, setMoreOpen] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [newOpen, setNewOpen] = useState(false);

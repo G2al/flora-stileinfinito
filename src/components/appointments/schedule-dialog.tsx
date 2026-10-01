@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { fetchWhatsAppUrl, openExternal, useUpdateAppointment } from "@/api/appointments";
+import { useUpdateAppointment } from "@/api/appointments";
 import { getErrorMessage } from "@/lib/api";
 import { fromDateTimeLocalValue, nowDateTimeLocal, toIso } from "@/lib/dates";
 import { applyServerErrors } from "@/lib/form-errors";
@@ -23,7 +23,6 @@ const schema = z.object({
       const d = fromDateTimeLocalValue(v);
       return !!d && d.getTime() >= Date.now() - 60_000;
     }, "La data non può essere nel passato"),
-  sendWhatsApp: z.boolean(),
 });
 type Values = z.infer<typeof schema>;
 
@@ -36,7 +35,7 @@ function ScheduleForm({ appointment, onDone }: { appointment: Appointment; onDon
     formState: { errors },
   } = useForm<Values>({
     resolver: zodResolver(schema),
-    defaultValues: { scheduledAt: "", sendWhatsApp: true },
+    defaultValues: { scheduledAt: "" },
   });
 
   const onSubmit = handleSubmit(async (values) => {
@@ -47,14 +46,7 @@ function ScheduleForm({ appointment, onDone }: { appointment: Appointment; onDon
       if (!applyServerErrors(error, setError, { scheduled_at: "scheduledAt" })) toast.error(getErrorMessage(error));
       return;
     }
-    toast.success("Appuntamento programmato");
-    if (values.sendWhatsApp) {
-      try {
-        openExternal(await fetchWhatsAppUrl(appointment.id, "confirmation"));
-      } catch (error) {
-        toast.error(getErrorMessage(error, "Non riesco a preparare il messaggio WhatsApp."));
-      }
-    }
+    toast.success("Appuntamento programmato. La conferma WhatsApp parte in automatico.");
     onDone();
   });
 
@@ -74,10 +66,6 @@ function ScheduleForm({ appointment, onDone }: { appointment: Appointment; onDon
           {...register("scheduledAt")}
         />
       </Field>
-      <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm">
-        <input type="checkbox" className="size-5 accent-[var(--primary)]" {...register("sendWhatsApp")} />
-        Invia conferma WhatsApp
-      </label>
       <Button type="submit" size="lg" disabled={update.isPending}>
         {update.isPending ? "Salvataggio…" : "Programma"}
       </Button>

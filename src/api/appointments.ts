@@ -1,5 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { requestDelayedAppointmentsRefresh } from "@/lib/delayed-refresh";
 import type { Appointment, AppointmentStatus, DashboardStats } from "@/types";
 
 export interface AppointmentListParams {
@@ -57,10 +58,14 @@ export function useDashboard() {
 
 function useInvalidateAppointments() {
   const qc = useQueryClient();
-  return () => {
+  return (saved?: Appointment) => {
     qc.invalidateQueries({ queryKey: appointmentKeys.all });
     qc.invalidateQueries({ queryKey: ["dashboard"] });
     qc.invalidateQueries({ queryKey: ["clients"] });
+    // Il backend invia la conferma WhatsApp dopo la risposta: un solo refetch ritardato per vedere il badge.
+    if (saved?.status === "confirmed" && saved.scheduled_at && !saved.whatsapp_sent) {
+      requestDelayedAppointmentsRefresh();
+    }
   };
 }
 
@@ -69,7 +74,7 @@ export function useCreateAppointment() {
   return useMutation({
     mutationFn: async (input: AppointmentInput) =>
       (await api.post<{ data: Appointment }>("/appointments", input)).data.data,
-    onSuccess: invalidate,
+    onSuccess: (saved) => invalidate(saved),
   });
 }
 
@@ -78,7 +83,7 @@ export function useUpdateAppointment() {
   return useMutation({
     mutationFn: async ({ id, ...input }: AppointmentInput & { id: number }) =>
       (await api.put<{ data: Appointment }>(`/appointments/${id}`, input)).data.data,
-    onSuccess: invalidate,
+    onSuccess: (saved) => invalidate(saved),
   });
 }
 
@@ -88,7 +93,7 @@ export function useDeleteAppointment() {
     mutationFn: async (id: number) => {
       await api.delete(`/appointments/${id}`);
     },
-    onSuccess: invalidate,
+    onSuccess: () => invalidate(),
   });
 }
 
