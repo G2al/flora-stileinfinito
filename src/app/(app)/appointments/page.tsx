@@ -15,6 +15,7 @@ import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { EmptyState, ErrorState, ListSkeleton, PageHeader } from "@/components/shared/page-parts";
 import { ServiceBadge } from "@/components/shared/service-chip";
 import { STATUS_LABELS, StatusBadge } from "@/components/shared/status-badge";
+import { AppointmentTotal } from "@/components/shared/appointment-total";
 import { WhatsAppBadge } from "@/components/shared/whatsapp-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -180,9 +181,12 @@ function AppointmentsContent() {
                         <WhatsAppBadge sent={a.whatsapp_sent} />
                       </div>
                     </div>
-                    <p className={`mt-1.5 text-sm font-medium ${a.scheduled_at ? "" : "text-amber-600 dark:text-amber-400"}`}>
-                      {formatRelativeDateTime(a.scheduled_at)}
-                    </p>
+                    <div className="mt-1.5 flex items-center justify-between gap-2">
+                      <p className={`text-sm font-medium ${a.scheduled_at ? "" : "text-amber-600 dark:text-amber-400"}`}>
+                        {formatRelativeDateTime(a.scheduled_at)}
+                      </p>
+                      <AppointmentTotal appointment={a} showWarningText />
+                    </div>
                     {a.services && a.services.length > 0 ? (
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {a.services.map((s) => (
@@ -205,6 +209,7 @@ function AppointmentsContent() {
                   <th className="px-4 py-2.5 font-medium">Staff</th>
                   <th className="px-4 py-2.5 font-medium">Servizi</th>
                   <th className="px-4 py-2.5 font-medium">Data / Ora</th>
+                  <th className="px-4 py-2.5 text-right font-medium">Totale</th>
                   <th className="px-4 py-2.5 font-medium">Stato</th>
                   <th className="px-2 py-2.5" />
                 </tr>
@@ -229,6 +234,9 @@ function AppointmentsContent() {
                     </td>
                     <td className={`px-4 py-3 whitespace-nowrap ${a.scheduled_at ? "" : "text-amber-600 dark:text-amber-400"}`}>
                       {formatRelativeDateTime(a.scheduled_at)}
+                    </td>
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                      <AppointmentTotal appointment={a} />
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap items-center gap-1.5">

@@ -1,6 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import type { Client, Paginated } from "@/types";
+import type { ClientSummary } from "@/types/client-summary";
 
 export interface ClientInput {
   first_name?: string | null;
@@ -61,5 +62,22 @@ export function useDeleteClient() {
       qc.invalidateQueries({ queryKey: ["appointments"] });
       qc.invalidateQueries({ queryKey: ["dashboard"] });
     },
+  });
+}
+
+/** Scheda economica: from/to yyyy-MM-dd (ora italiana, estremi inclusi); senza parametri = mese corrente. */
+export function useClientSummary(id: number, range: { from?: string; to?: string }, enabled = true) {
+  return useQuery({
+    queryKey: ["clients", "summary", id, range.from ?? null, range.to ?? null],
+    queryFn: async () => (await api.get<ClientSummary>(`/clients/${id}/summary`, { params: range })).data,
+    placeholderData: keepPreviousData,
+    enabled,
+  });
+}
+
+export function useClient(id: number) {
+  return useQuery({
+    queryKey: ["clients", "detail", id],
+    queryFn: async () => (await api.get<{ data: Client }>(`/clients/${id}`)).data.data,
   });
 }

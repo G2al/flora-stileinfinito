@@ -11,7 +11,7 @@ export function TopClients({ top }: { top: StatsClients["top"] }) {
       {top.map((c, i) => (
         <li key={c.client_id}>
           <Link
-            href={`/clients?q=${encodeURIComponent(c.phone)}`}
+            href={`/clients/${c.client_id}`}
             className="flex min-h-14 items-center gap-3 py-2 transition-colors hover:bg-muted/40"
           >
             <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-semibold text-accent-foreground">

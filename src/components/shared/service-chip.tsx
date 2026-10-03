@@ -1,10 +1,10 @@
 import { CheckIcon } from "lucide-react";
 import { DEFAULT_SERVICE_COLOR } from "@/config/business";
+import { fmtEuro } from "@/lib/money";
 import { cn } from "@/lib/utils";
-import type { Service } from "@/types";
 
 /** Badge di sola lettura con il colore del servizio. */
-export function ServiceBadge({ service, className }: { service: Pick<Service, "name" | "color">; className?: string }) {
+export function ServiceBadge({ service, className }: { service: { name: string; color: string | null }; className?: string }) {
   const color = service.color || DEFAULT_SERVICE_COLOR;
   return (
     <span
@@ -17,17 +17,20 @@ export function ServiceBadge({ service, className }: { service: Pick<Service, "n
   );
 }
 
-/** Chip selezionabile (multi-selezione) con colore e durata. */
+/** Chip selezionabile (multi-selezione) con colore, durata e prezzo di listino (se presenti). */
 export function ServiceChip({
   service,
   selected,
   onToggle,
 }: {
-  service: Service;
+  service: { name: string; color: string | null; duration_minutes: number | null; price: number | null };
   selected: boolean;
   onToggle: () => void;
 }) {
   const color = service.color || DEFAULT_SERVICE_COLOR;
+  const details = [service.duration_minutes ? `${service.duration_minutes} min` : null, service.price !== null ? fmtEuro(service.price) : null]
+    .filter(Boolean)
+    .join(" · ");
   return (
     <button
       type="button"
@@ -49,7 +52,7 @@ export function ServiceChip({
         <span className="size-2.5 rounded-full" style={{ backgroundColor: color }} />
       )}
       {service.name}
-      <span className="text-xs font-normal opacity-70">{service.duration_minutes} min</span>
+      {details ? <span className="text-xs font-normal opacity-70">{details}</span> : null}
     </button>
   );
 }

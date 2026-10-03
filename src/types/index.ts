@@ -15,11 +15,42 @@ export interface Client {
   created_at: string | null;
 }
 
+export interface ServiceCategoryRef {
+  id: number;
+  name: string;
+  parent_id: number | null;
+}
+
 export interface Service {
   id: number;
   name: string;
   color: string | null;
-  duration_minutes: number;
+  /** null = durata non specificata */
+  duration_minutes: number | null;
+  /** Listino in euro, null = nessun prezzo */
+  price: number | null;
+  category_id: number | null;
+  category: ServiceCategoryRef | null;
+}
+
+/** Albero a due livelli (categoria > sottocategoria), con i servizi dentro. */
+export interface ServiceCategory {
+  id: number;
+  name: string;
+  parent_id: number | null;
+  children: ServiceCategory[];
+  services: Service[];
+}
+
+/** Servizio dentro un appuntamento: price è il prezzo APPLICATO, default_price il listino attuale. */
+export interface AppointmentService {
+  id: number;
+  name: string;
+  color: string | null;
+  category_id: number | null;
+  duration_minutes: number | null;
+  price: number | null;
+  default_price: number | null;
 }
 
 export interface Staff {
@@ -39,7 +70,11 @@ export interface Appointment {
   staff_id: number;
   client?: Client;
   staff?: Staff;
-  services?: Service[];
+  services?: AppointmentService[];
+  /** Somma dei prezzi applicati */
+  total_price?: number;
+  /** Quanti servizi non hanno prezzo */
+  unpriced_services?: number;
   created_at: string | null;
 }
 

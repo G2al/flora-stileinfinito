@@ -1,6 +1,7 @@
 import { formatTime } from "@/lib/dates";
 import { clientFullName } from "@/lib/format";
 import type { Appointment } from "@/types";
+import { AppointmentTotal } from "@/components/shared/appointment-total";
 import { WhatsAppBadge } from "@/components/shared/whatsapp-badge";
 import { apptColor } from "@/components/calendar/calendar-utils";
 
@@ -29,6 +30,7 @@ export function AppointmentRow({ appointment: a, onClick }: { appointment: Appoi
           </span>
         ) : null}
         <WhatsAppBadge sent={a.whatsapp_sent} compact />
+        <AppointmentTotal appointment={a} />
       </span>
     </button>
   );

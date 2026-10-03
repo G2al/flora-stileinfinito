@@ -16,6 +16,9 @@ export interface AppointmentInput {
   client_id?: number;
   client?: { phone: string; first_name?: string | null; last_name?: string | null };
   staff_id?: number;
+  /** Formato preferito: price è il prezzo applicato (se omesso il backend copia il listino). */
+  services?: { id: number; price?: number }[];
+  /** Vecchio formato, senza prezzi. */
   service_ids?: number[];
   scheduled_at?: string | null;
   notes?: string | null;

@@ -17,9 +17,10 @@ import {
 import { useSaveClient } from "@/api/clients";
 import { useServices } from "@/api/services";
 import { useSaveStaff, useStaff } from "@/api/staff";
-import { DEFAULT_APPOINTMENT_MINUTES } from "@/config/business";
 import { fromDateTimeLocalValue, formatDuration, formatTime, toDateTimeLocalValue, toIso, addMinutes, nowDateTimeLocal } from "@/lib/dates";
 import { getErrorMessage } from "@/lib/api";
+import { fmtEuro, parsePrice, priceToInput } from "@/lib/money";
+import { serviceTotals, type CatalogItem, type SelectedService } from "@/lib/service-totals";
 import { applyServerErrors } from "@/lib/form-errors";
 import type { Appointment, AppointmentStatus, Client } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -30,7 +31,7 @@ import { ClientPicker } from "@/components/appointments/client-picker";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { Field, ListSkeleton } from "@/components/shared/page-parts";
 import { ResponsiveDialog } from "@/components/shared/responsive-dialog";
-import { ServiceChip } from "@/components/shared/service-chip";
+import { ServicePicker } from "@/components/appointments/service-picker";
 import { STATUS_LABELS } from "@/components/shared/status-badge";
 import { WhatsAppBadge } from "@/components/shared/whatsapp-badge";
 
@@ -45,7 +46,7 @@ function buildSchema(initialScheduledAt: string) {
       newLastName: z.string().trim(),
       newPhone: z.string().trim(),
       staffId: z.string().min(1, "Seleziona un'operatrice"),
-      serviceIds: z.array(z.number()),
+      services: z.array(z.object({ id: z.number(), price: z.string() })),
       scheduledAt: z.string(),
       notes: z.string(),
       status: z.enum(["pending", "confirmed", "completed", "cancelled"]),
@@ -57,6 +58,11 @@ function buildSchema(initialScheduledAt: string) {
       if (v.clientMode === "new" && !v.newPhone) {
         ctx.addIssue({ code: "custom", path: ["newPhone"], message: "Il telefono è obbligatorio" });
       }
+      v.services.forEach((svc, i) => {
+        if (parsePrice(svc.price) === undefined) {
+          ctx.addIssue({ code: "custom", path: ["services", i, "price"], message: "Importo non valido (es. 30 oppure 30,50)" });
+        }
+      });
       if (v.scheduledAt && v.scheduledAt !== initialScheduledAt) {
         const d = fromDateTimeLocalValue(v.scheduledAt);
         if (!d) ctx.addIssue({ code: "custom", path: ["scheduledAt"], message: "Data non valida" });
@@ -74,7 +80,7 @@ const FIELD_MAP: Record<string, keyof Values> = {
   "client.first_name": "newFirstName",
   "client.last_name": "newLastName",
   staff_id: "staffId",
-  service_ids: "serviceIds",
+  services: "services",
   scheduled_at: "scheduledAt",
 };
 
@@ -129,7 +135,8 @@ function AppointmentFormBody({ appointment, defaultDate, onDone }: FormProps) {
       newLastName: "",
       newPhone: "",
       staffId: appointment ? String(appointment.staff_id) : "",
-      serviceIds: appointment?.services?.map((s) => s.id) ?? [],
+      // In modifica carichiamo i prezzi APPLICATI, non il listino.
+      services: appointment?.services?.map((s) => ({ id: s.id, price: priceToInput(s.price) })) ?? [],
       scheduledAt: initialScheduledAt || (defaultDate ? toDateTimeLocalValue(defaultDate) : ""),
       notes: appointment?.notes ?? "",
       status: appointment?.status ?? "pending",
@@ -137,7 +144,7 @@ function AppointmentFormBody({ appointment, defaultDate, onDone }: FormProps) {
   });
 
   const clientMode = useWatch({ control, name: "clientMode" });
-  const serviceIds = useWatch({ control, name: "serviceIds" });
+  const selectedServices = useWatch({ control, name: "services" });
   const scheduledAt = useWatch({ control, name: "scheduledAt" });
 
   const services = useMemo(() => servicesQuery.data ?? [], [servicesQuery.data]);
@@ -149,20 +156,25 @@ function AppointmentFormBody({ appointment, defaultDate, onDone }: FormProps) {
     if (!isEdit && onlyStaffId && !getValues("staffId")) setValue("staffId", onlyStaffId);
   }, [isEdit, onlyStaffId, getValues, setValue]);
 
-  const totalMinutes = useMemo(() => {
-    const sum = services.filter((s) => serviceIds.includes(s.id)).reduce((a, s) => a + s.duration_minutes, 0);
-    return sum > 0 ? sum : DEFAULT_APPOINTMENT_MINUTES;
-  }, [services, serviceIds]);
+  // Listino attuale + i servizi dell'appuntamento (per i casi in cui non sono più nel listino).
+  const catalog = useMemo(() => {
+    const map = new Map<number, CatalogItem>();
+    for (const sv of appointment?.services ?? []) {
+      map.set(sv.id, { id: sv.id, name: sv.name, color: sv.color, duration_minutes: sv.duration_minutes, price: sv.default_price });
+    }
+    for (const sv of services) map.set(sv.id, sv);
+    return map;
+  }, [services, appointment]);
+
+  const totals = useMemo(() => serviceTotals(selectedServices, catalog), [selectedServices, catalog]);
+  const totalMinutes = totals.minutes;
 
   const startDate = fromDateTimeLocalValue(scheduledAt);
   const endDate = startDate ? addMinutes(startDate, totalMinutes) : null;
 
-  function toggleService(id: number) {
-    const current = getValues("serviceIds");
-    setValue("serviceIds", current.includes(id) ? current.filter((x) => x !== id) : [...current, id], {
-      shouldDirty: true,
-    });
-    clearErrors("serviceIds");
+  function setSelectedServices(next: SelectedService[]) {
+    setValue("services", next, { shouldDirty: true });
+    clearErrors("services");
   }
 
   async function createStaffInline() {
@@ -183,7 +195,11 @@ function AppointmentFormBody({ appointment, defaultDate, onDone }: FormProps) {
     const scheduled = fromDateTimeLocalValue(values.scheduledAt);
     const base = {
       staff_id: Number(values.staffId),
-      service_ids: values.serviceIds,
+      services: values.services.map((sv) => {
+        const price = parsePrice(sv.price);
+        // Prezzo omesso = il backend copia il listino.
+        return price === null || price === undefined ? { id: sv.id } : { id: sv.id, price };
+      }),
       notes: values.notes.trim() || null,
     };
 
@@ -371,16 +387,26 @@ function AppointmentFormBody({ appointment, defaultDate, onDone }: FormProps) {
       </Field>
 
       {/* Servizi */}
-      <Field label="Servizi" error={errors.serviceIds?.message}>
-        {services.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nessun servizio disponibile. Creane uno dalla sezione Servizi.</p>
-        ) : (
-          <div role="group" aria-label="Servizi" className="flex flex-wrap gap-2">
-            {services.map((s) => (
-              <ServiceChip key={s.id} service={s} selected={serviceIds.includes(s.id)} onToggle={() => toggleService(s.id)} />
-            ))}
-          </div>
-        )}
+      <Field label="Servizi" error={errors.services?.root?.message ?? errors.services?.message}>
+        <ServicePicker
+          services={services}
+          catalog={catalog}
+          value={selectedServices}
+          onChange={setSelectedServices}
+          priceError={(i) => errors.services?.[i]?.price?.message}
+        />
+        {selectedServices.length > 0 ? (
+          <p className="flex flex-wrap items-baseline justify-between gap-x-3 rounded-lg bg-muted/50 px-3 py-2 text-sm" aria-live="polite">
+            <span>
+              Totale: <strong className="text-base tabular-nums">{fmtEuro(totals.total)}</strong>
+            </span>
+            {totals.unpriced > 0 ? (
+              <span className="text-xs text-amber-700 dark:text-amber-400">
+                {totals.unpriced} {totals.unpriced === 1 ? "servizio senza prezzo" : "servizi senza prezzo"}
+              </span>
+            ) : null}
+          </p>
+        ) : null}
       </Field>
 
       {/* Data e ora */}
@@ -414,7 +440,7 @@ function AppointmentFormBody({ appointment, defaultDate, onDone }: FormProps) {
         </div>
         <p className="text-sm text-muted-foreground" aria-live="polite">
           Durata totale: <strong className="text-foreground">{formatDuration(totalMinutes)}</strong>
-          {serviceIds.length === 0 ? " (predefinita)" : ""}
+          {totals.isDefaultDuration ? " (predefinita)" : ""}
           {endDate ? (
             <>
               {" · "}Fine: <strong className="text-foreground">{formatTime(endDate)}</strong>
