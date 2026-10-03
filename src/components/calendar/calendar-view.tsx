@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { format, isSameDay, startOfDay } from "date-fns";
 import { ChevronLeftIcon, ChevronRightIcon, Loader2Icon } from "lucide-react";
 import { useAppointments } from "@/api/appointments";
-import { useStaff } from "@/api/staff";
+import { useServiceCategories } from "@/api/service-categories";
 import { useFillHeight } from "@/hooks/use-fill-height";
 import { useIsDesktop } from "@/hooks/use-media-query";
 import { parseDate } from "@/lib/dates";
@@ -39,7 +39,7 @@ export function CalendarView({ onNewAt, onEdit }: Props) {
   const isDesktop = useIsDesktop();
   const [viewPref, setViewPref] = useState<CalView>(isDesktop ? "week" : "day");
   const [anchor, setAnchor] = useState<Date>(() => startOfDay(new Date()));
-  const [staffFilter, setStaffFilter] = useState<number | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<number | null>(null);
   const { ref: fillRef, height } = useFillHeight();
   const touch = useRef<{ x: number; y: number; ok: boolean } | null>(null);
 
@@ -54,23 +54,50 @@ export function CalendarView({ onNewAt, onEdit }: Props) {
   const views = isDesktop ? DESKTOP_VIEWS : MOBILE_VIEWS;
 
   const range = useMemo(() => fetchRange(view, anchor), [view, anchor]);
-  const staffQuery = useStaff();
+  const categoriesQuery = useServiceCategories();
+  const categories = useMemo(() => categoriesQuery.data ?? [], [categoriesQuery.data]);
+
+  // Ogni categoria (anche sottocategoria) -> categoria principale: il filtro include le sottocategorie.
+  const topOf = useMemo(() => {
+    const map = new Map<number, number>();
+    for (const c of categories) {
+      map.set(c.id, c.id);
+      for (const sub of c.children) map.set(sub.id, c.id);
+    }
+    return map;
+  }, [categories]);
+  const topCategoriesOf = (a: { services?: { category_id: number | null }[] }) => {
+    const ids = new Set<number>();
+    for (const sv of a.services ?? []) {
+      const top = sv.category_id === null ? undefined : topOf.get(sv.category_id);
+      if (top !== undefined) ids.add(top);
+    }
+    return ids;
+  };
   const { data, isFetching } = useAppointments({ ...range, status: "confirmed" });
 
   const visible = useMemo(
-    () => (data ?? []).filter((a) => a.scheduled_at && (staffFilter === null || a.staff_id === staffFilter)),
-    [data, staffFilter],
+    () =>
+      (data ?? []).filter(
+        (a) => a.scheduled_at && (categoryFilter === null || topCategoriesOf(a).has(categoryFilter)),
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [data, categoryFilter, topOf],
   );
 
-  const dayCounts = useMemo(() => {
+  // Appuntamenti del giorno per categoria principale (uno può contare in più categorie).
+  const { dayCounts, dayTotal } = useMemo(() => {
     const counts = new Map<number, number>();
+    let total = 0;
     for (const a of data ?? []) {
       const d = parseDate(a.scheduled_at);
-      if (d && isSameDay(d, anchor)) counts.set(a.staff_id, (counts.get(a.staff_id) ?? 0) + 1);
+      if (!d || !isSameDay(d, anchor)) continue;
+      total += 1;
+      for (const id of topCategoriesOf(a)) counts.set(id, (counts.get(id) ?? 0) + 1);
     }
-    return counts;
-  }, [data, anchor]);
-  const dayTotal = useMemo(() => [...dayCounts.values()].reduce((a, b) => a + b, 0), [dayCounts]);
+    return { dayCounts: counts, dayTotal: total };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, anchor, topOf]);
 
   const go = (dir: 1 | -1) => setAnchor((a) => stepAnchor(view, a, dir));
   const goToday = () => setAnchor(startOfDay(new Date()));
@@ -168,23 +195,23 @@ export function CalendarView({ onNewAt, onEdit }: Props) {
         />
       ) : null}
 
-      {/* Filtro operatrici */}
-      {staffQuery.data && staffQuery.data.length > 0 ? (
+      {/* Filtro per categoria di servizio */}
+      {categories.length > 0 ? (
         <div
           role="group"
-          aria-label="Filtra per operatrice"
+          aria-label="Filtra per categoria"
           data-no-swipe
           className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-0.5 [scrollbar-width:none] md:order-2 md:mx-0 md:min-w-0 md:flex-1 md:px-0 md:pb-0"
         >
-          {[{ id: null as number | null, name: "Tutte" }, ...staffQuery.data].map((s) => {
-            const active = staffFilter === s.id;
+          {[{ id: null as number | null, name: "Tutte" }, ...categories].map((s) => {
+            const active = categoryFilter === s.id;
             const count = showCounts ? (s.id === null ? dayTotal : (dayCounts.get(s.id) ?? 0)) : null;
             return (
               <button
                 key={s.id ?? "all"}
                 type="button"
                 aria-pressed={active}
-                onClick={() => setStaffFilter(s.id)}
+                onClick={() => setCategoryFilter(s.id)}
                 className={cn(
                   "flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition-colors",
                   active ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:bg-muted",
@@ -217,7 +244,7 @@ export function CalendarView({ onNewAt, onEdit }: Props) {
             anchor={anchor}
             appointments={visible}
             height={height}
-            showStaff={view === "day" && staffFilter === null}
+            showStaff={view === "day"}
             onNewAt={onNewAt}
             onEdit={onEdit}
           />
