@@ -9,7 +9,7 @@ import itLocale from "@fullcalendar/core/locales/it";
 import type { EventClickArg, EventContentArg, EventDropArg, EventInput } from "@fullcalendar/core";
 import { toast } from "sonner";
 import { useUpdateAppointment } from "@/api/appointments";
-import { BUSINESS_HOURS } from "@/config/business";
+import { BUSINESS_HOURS, CALENDAR_VISIBLE_HOURS } from "@/config/business";
 import { getErrorMessage } from "@/lib/api";
 import { formatTime, toIso } from "@/lib/dates";
 import { clientFullName } from "@/lib/format";
@@ -156,8 +156,8 @@ export function TimeGrid({ view, anchor, appointments, height, showStaff, onNewA
         slotLabelInterval="01:00"
         slotLabelFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
         eventTimeFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
-        slotMinTime={`${BUSINESS_HOURS.open}:00`}
-        slotMaxTime={`${BUSINESS_HOURS.close}:00`}
+        slotMinTime={`${CALENDAR_VISIBLE_HOURS.start}:00`}
+        slotMaxTime={`${CALENDAR_VISIBLE_HOURS.end}:00`}
         scrollTime={scrollTime}
         businessHours={{
           daysOfWeek: [...BUSINESS_HOURS.daysOfWeek],
