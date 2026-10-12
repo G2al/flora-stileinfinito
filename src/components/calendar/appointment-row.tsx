@@ -17,7 +17,7 @@ export function AppointmentRow({ appointment: a, onClick }: { appointment: Appoi
       <span className="w-1.5 shrink-0 rounded-full" style={{ backgroundColor: apptColor(a) }} aria-hidden />
       <span className="flex w-[4.25rem] shrink-0 flex-col justify-center text-sm tabular-nums">
         <span className="font-semibold">{formatTime(a.scheduled_at)}</span>
-        <span className="text-xs text-muted-foreground">{formatTime(a.ends_at)}</span>
+        {a.duration_minutes > 0 ? <span className="text-xs text-muted-foreground">{formatTime(a.ends_at)}</span> : null}
       </span>
       <span className="min-w-0 flex-1">
         <span className="block truncate font-medium">{clientFullName(a.client)}</span>

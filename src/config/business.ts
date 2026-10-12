@@ -20,5 +20,4 @@ export const CALENDAR_VISIBLE_HOURS = {
 } as const;
 
 export const DEFAULT_SERVICE_COLOR = "#16a34a";
-export const DEFAULT_APPOINTMENT_MINUTES = 30;
 export const APP_NAME = "Flora Stile Infinito";

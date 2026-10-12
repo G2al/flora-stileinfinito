@@ -1,4 +1,3 @@
-import { DEFAULT_APPOINTMENT_MINUTES } from "@/config/business";
 import { parsePrice } from "@/lib/money";
 
 export interface SelectedService {
@@ -23,7 +22,7 @@ export function effectivePrice(s: SelectedService, item: CatalogItem | undefined
   return parsed === null ? (item?.price ?? null) : parsed;
 }
 
-/** Totale in euro, servizi senza prezzo, durata (somma di quelle specificate, altrimenti 30 minuti). */
+/** Totale in euro, servizi senza prezzo, durata (somma di quelle specificate; 0 se nessun servizio ne ha una). */
 export function serviceTotals(selected: SelectedService[], catalog: Map<number, CatalogItem>) {
   let cents = 0;
   let unpriced = 0;
@@ -42,7 +41,7 @@ export function serviceTotals(selected: SelectedService[], catalog: Map<number, 
   return {
     total: cents / 100,
     unpriced,
-    minutes: hasDuration ? minutes : DEFAULT_APPOINTMENT_MINUTES,
-    isDefaultDuration: !hasDuration,
+    minutes,
+    hasDuration,
   };
 }

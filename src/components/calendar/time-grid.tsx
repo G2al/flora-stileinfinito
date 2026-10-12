@@ -25,13 +25,21 @@ const FC_VIEW: Record<GridView, string> = {
   month: "dayGridMonth",
 };
 
+/** Altezza MINIMA solo visiva (minuti) per gli appuntamenti senza durata: non è un dato e non va mai inviato al backend. */
+const VISUAL_MIN_MINUTES = 30;
+
 function toEvent(a: Appointment): EventInput {
   const color = apptColor(a);
+  // Durata 0 => fine = inizio: allunghiamo il blocco solo per disegnarlo e renderlo cliccabile.
+  const visualEnd =
+    a.scheduled_at && a.duration_minutes === 0
+      ? new Date(new Date(a.scheduled_at).getTime() + VISUAL_MIN_MINUTES * 60_000).toISOString()
+      : undefined;
   return {
     id: String(a.id),
     title: clientFullName(a.client),
     start: a.scheduled_at ?? undefined,
-    end: a.ends_at ?? undefined,
+    end: visualEnd ?? a.ends_at ?? undefined,
     backgroundColor: color,
     borderColor: color,
     textColor: textOn(color),
@@ -125,7 +133,7 @@ export function TimeGrid({ view, anchor, appointments, height, showStaff, onNewA
           ) : null}
         </div>
         <span className="truncate opacity-95">
-          {start}–{formatTime(a.ends_at)}
+          {a.duration_minutes > 0 ? `${start}–${formatTime(a.ends_at)}` : start}
           {services ? ` · ${services}` : ""}
         </span>
       </div>

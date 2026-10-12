@@ -170,7 +170,8 @@ function AppointmentFormBody({ appointment, defaultDate, onDone }: FormProps) {
   const totalMinutes = totals.minutes;
 
   const startDate = fromDateTimeLocalValue(scheduledAt);
-  const endDate = startDate ? addMinutes(startDate, totalMinutes) : null;
+  // Senza durate sui servizi la durata è "non specificata": niente ora di fine.
+  const endDate = startDate && totals.hasDuration ? addMinutes(startDate, totalMinutes) : null;
 
   function setSelectedServices(next: SelectedService[]) {
     setValue("services", next, { shouldDirty: true });
@@ -439,8 +440,13 @@ function AppointmentFormBody({ appointment, defaultDate, onDone }: FormProps) {
           ) : null}
         </div>
         <p className="text-sm text-muted-foreground" aria-live="polite">
-          Durata totale: <strong className="text-foreground">{formatDuration(totalMinutes)}</strong>
-          {totals.isDefaultDuration ? " (predefinita)" : ""}
+          {totals.hasDuration ? (
+            <>
+              Durata totale: <strong className="text-foreground">{formatDuration(totalMinutes)}</strong>
+            </>
+          ) : (
+            <>Durata non specificata</>
+          )}
           {endDate ? (
             <>
               {" · "}Fine: <strong className="text-foreground">{formatTime(endDate)}</strong>
