@@ -225,7 +225,7 @@ function StatsBody({ data, insights }: { data: NonNullable<ReturnType<typeof use
         <Widget title="Per operatrice" description="Appuntamenti e ore lavorate">
           <StaffBars staff={data.by_staff} />
         </Widget>
-        <Widget title="Servizi più richiesti" description="Quante volte e per quanto tempo">
+        <Widget title="Servizi più richiesti" description="Quante volte nel periodo">
           <ServiceBars services={data.by_service} />
         </Widget>
         <Widget title="Giorni della settimana">

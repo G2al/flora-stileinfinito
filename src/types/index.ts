@@ -25,8 +25,6 @@ export interface Service {
   id: number;
   name: string;
   color: string | null;
-  /** null = durata non specificata */
-  duration_minutes: number | null;
   /** Listino in euro, null = nessun prezzo */
   price: number | null;
   category_id: number | null;
@@ -48,7 +46,6 @@ export interface AppointmentService {
   name: string;
   color: string | null;
   category_id: number | null;
-  duration_minutes: number | null;
   price: number | null;
   default_price: number | null;
 }
@@ -62,6 +59,7 @@ export interface Appointment {
   id: number;
   scheduled_at: string | null;
   ends_at: string | null;
+  /** Minuti; 0 = durata NON specificata (ends_at = scheduled_at) */
   duration_minutes: number;
   status: AppointmentStatus;
   notes: string | null;

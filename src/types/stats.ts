@@ -43,7 +43,6 @@ export interface StatsService {
   service_id: number;
   name: string;
   color: string | null;
-  duration_minutes: number;
   count: number;
   minutes: number;
 }

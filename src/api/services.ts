@@ -6,8 +6,6 @@ import type { Service } from "@/types";
 export interface ServiceInput {
   name: string;
   color?: string | null;
-  /** 5-720, oppure null/omesso = nessuna durata */
-  duration_minutes?: number | null;
   /** Listino in euro (>= 0), oppure null */
   price?: number | null;
   category_id?: number | null;

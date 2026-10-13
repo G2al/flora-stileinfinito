@@ -23,14 +23,12 @@ export function ServiceChip({
   selected,
   onToggle,
 }: {
-  service: { name: string; color: string | null; duration_minutes: number | null; price: number | null };
+  service: { name: string; color: string | null; price: number | null };
   selected: boolean;
   onToggle: () => void;
 }) {
   const color = service.color || DEFAULT_SERVICE_COLOR;
-  const details = [service.duration_minutes ? `${service.duration_minutes} min` : null, service.price !== null ? fmtEuro(service.price) : null]
-    .filter(Boolean)
-    .join(" · ");
+  const details = service.price !== null ? fmtEuro(service.price) : "";
   return (
     <button
       type="button"

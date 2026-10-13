@@ -1,4 +1,4 @@
-import { fmtHours, fmtInt, fmtDuration } from "@/lib/stats";
+import { fmtHours, fmtInt } from "@/lib/stats";
 import type { StatsService, StatsStaff } from "@/types/stats";
 import { WidgetEmpty } from "@/components/stats/widget";
 
@@ -61,8 +61,8 @@ export function ServiceBars({ services }: { services: StatsService[] }) {
         label: s.name,
         value: s.count,
         color: s.color || NEUTRAL,
-        detail: `${fmtInt(s.count)} × · ${fmtDuration(s.minutes)}`,
-        srText: `${s.name}: ${s.count} volte, ${fmtDuration(s.minutes)} in totale`,
+        detail: `${fmtInt(s.count)} ${s.count === 1 ? "volta" : "volte"}`,
+        srText: `${s.name}: ${s.count} ${s.count === 1 ? "volta" : "volte"}`,
       }))}
     />
   );

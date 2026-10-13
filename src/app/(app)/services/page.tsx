@@ -27,25 +27,16 @@ const schema = z
     name: z.string().trim().min(1, "Inserisci il nome").max(255),
     categoryId: z.string(),
     price: z.string(),
-    duration: z.string(),
     color: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Colore non valido"),
   })
   .superRefine((v, ctx) => {
     if (parsePrice(v.price) === undefined) {
       ctx.addIssue({ code: "custom", path: ["price"], message: "Importo non valido (es. 30 oppure 30,50)" });
     }
-    const d = v.duration.trim();
-    if (d !== "") {
-      const n = Number(d);
-      if (!Number.isInteger(n) || n < 5 || n > 720) {
-        ctx.addIssue({ code: "custom", path: ["duration"], message: "Da 5 a 720 minuti, oppure lascia vuoto" });
-      }
-    }
   });
 type Values = z.infer<typeof schema>;
 
 const FIELD_MAP: Record<string, keyof Values> = {
-  duration_minutes: "duration",
   category_id: "categoryId",
 };
 
@@ -72,7 +63,6 @@ function ServiceForm({
       name: service?.name ?? "",
       categoryId: service?.category_id ? String(service.category_id) : "",
       price: priceToInput(service?.price),
-      duration: service?.duration_minutes ? String(service.duration_minutes) : "",
       color: service?.color ?? DEFAULT_SERVICE_COLOR,
     },
   });
@@ -87,7 +77,6 @@ function ServiceForm({
         color: values.color,
         category_id: values.categoryId ? Number(values.categoryId) : null,
         price: parsePrice(values.price) ?? null,
-        duration_minutes: values.duration.trim() === "" ? null : Number(values.duration),
       });
       toast.success(service ? "Servizio aggiornato" : "Servizio creato");
       onDone();
@@ -112,32 +101,21 @@ function ServiceForm({
         />
       </Field>
 
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Prezzo di listino (€)" htmlFor="service-price" error={errors.price?.message}>
-          <Input
-            id="service-price"
-            inputMode="decimal"
-            placeholder="es. 30"
-            autoComplete="off"
-            aria-invalid={!!errors.price}
-            {...register("price")}
-          />
-        </Field>
-        <Field label="Durata (minuti)" htmlFor="service-duration" error={errors.duration?.message}>
-          <Input
-            id="service-duration"
-            type="number"
-            inputMode="numeric"
-            min={5}
-            max={720}
-            step={5}
-            placeholder="opzionale"
-            aria-invalid={!!errors.duration}
-            {...register("duration")}
-          />
-        </Field>
-      </div>
-      <p className="-mt-2 text-xs text-muted-foreground">Prezzo e durata sono facoltativi: lascia vuoto se non specificati.</p>
+      <Field
+        label="Prezzo di listino (€)"
+        htmlFor="service-price"
+        error={errors.price?.message}
+        hint="Facoltativo: lascia vuoto se il servizio non ha un prezzo."
+      >
+        <Input
+          id="service-price"
+          inputMode="decimal"
+          placeholder="es. 30"
+          autoComplete="off"
+          aria-invalid={!!errors.price}
+          {...register("price")}
+        />
+      </Field>
 
       <Field label="Colore" htmlFor="service-color" error={errors.color?.message}>
         <div className="flex items-center gap-3">
@@ -244,7 +222,6 @@ export default function ServicesPage() {
                   <p className="flex flex-wrap gap-x-2 text-sm text-muted-foreground">
                     {path ? <span className="truncate">{path}</span> : null}
                     <span className="tabular-nums">{s.price !== null ? fmtEuro(s.price) : "—"}</span>
-                    <span className="tabular-nums">{s.duration_minutes ? `${s.duration_minutes} min` : "—"}</span>
                   </p>
                 </div>
                 <Button variant="ghost" size="icon" aria-label={`Modifica ${s.name}`} onClick={() => openForm(s)}>

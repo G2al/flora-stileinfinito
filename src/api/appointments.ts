@@ -21,6 +21,8 @@ export interface AppointmentInput {
   /** Vecchio formato, senza prezzi. */
   service_ids?: number[];
   scheduled_at?: string | null;
+  /** 1-720; null/0 = nessuna durata. In POST se manca nasce senza durata; in PUT se manca resta invariata. */
+  duration_minutes?: number | null;
   notes?: string | null;
   status?: AppointmentStatus;
 }

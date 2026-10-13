@@ -19,6 +19,7 @@ import { useServices } from "@/api/services";
 import { useSaveStaff, useStaff } from "@/api/staff";
 import { fromDateTimeLocalValue, formatDuration, formatTime, toDateTimeLocalValue, toIso, addMinutes, nowDateTimeLocal } from "@/lib/dates";
 import { getErrorMessage } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import { fmtEuro, parsePrice, priceToInput } from "@/lib/money";
 import { serviceTotals, type CatalogItem, type SelectedService } from "@/lib/service-totals";
 import { applyServerErrors } from "@/lib/form-errors";
@@ -36,6 +37,16 @@ import { STATUS_LABELS } from "@/components/shared/status-badge";
 import { WhatsAppBadge } from "@/components/shared/whatsapp-badge";
 
 const STATUSES: AppointmentStatus[] = ["pending", "confirmed", "completed", "cancelled"];
+const MAX_DURATION = 720;
+/** Scorciatoie rapide per la durata (minuti) */
+const DURATION_SHORTCUTS = [15, 30, 45, 60, 90, 120];
+
+/** Testo digitato -> minuti validi (1-720), altrimenti 0 (= nessuna durata). */
+function parseDuration(text: string): number {
+  const t = text.trim();
+  const n = Number(t);
+  return t !== "" && Number.isInteger(n) && n >= 1 && n <= MAX_DURATION ? n : 0;
+}
 
 function buildSchema(initialScheduledAt: string) {
   return z
@@ -48,6 +59,8 @@ function buildSchema(initialScheduledAt: string) {
       staffId: z.string().min(1, "Seleziona un'operatrice"),
       services: z.array(z.object({ id: z.number(), price: z.string() })),
       scheduledAt: z.string(),
+      /** Minuti digitati; vuoto = durata non specificata */
+      duration: z.string(),
       notes: z.string(),
       status: z.enum(["pending", "confirmed", "completed", "cancelled"]),
     })
@@ -57,6 +70,13 @@ function buildSchema(initialScheduledAt: string) {
       }
       if (v.clientMode === "new" && !v.newPhone) {
         ctx.addIssue({ code: "custom", path: ["newPhone"], message: "Il telefono è obbligatorio" });
+      }
+      const dur = v.duration.trim();
+      if (dur !== "") {
+        const n = Number(dur);
+        if (!Number.isInteger(n) || n < 1 || n > MAX_DURATION) {
+          ctx.addIssue({ code: "custom", path: ["duration"], message: `Da 1 a ${MAX_DURATION} minuti, oppure lascia vuoto` });
+        }
       }
       v.services.forEach((svc, i) => {
         if (parsePrice(svc.price) === undefined) {
@@ -82,6 +102,7 @@ const FIELD_MAP: Record<string, keyof Values> = {
   staff_id: "staffId",
   services: "services",
   scheduled_at: "scheduledAt",
+  duration_minutes: "duration",
 };
 
 function splitSearch(search: string): { first: string; last: string; phone: string } {
@@ -138,6 +159,8 @@ function AppointmentFormBody({ appointment, defaultDate, onDone }: FormProps) {
       // In modifica carichiamo i prezzi APPLICATI, non il listino.
       services: appointment?.services?.map((s) => ({ id: s.id, price: priceToInput(s.price) })) ?? [],
       scheduledAt: initialScheduledAt || (defaultDate ? toDateTimeLocalValue(defaultDate) : ""),
+      // 0 = durata non specificata => campo vuoto
+      duration: appointment && appointment.duration_minutes > 0 ? String(appointment.duration_minutes) : "",
       notes: appointment?.notes ?? "",
       status: appointment?.status ?? "pending",
     },
@@ -146,6 +169,7 @@ function AppointmentFormBody({ appointment, defaultDate, onDone }: FormProps) {
   const clientMode = useWatch({ control, name: "clientMode" });
   const selectedServices = useWatch({ control, name: "services" });
   const scheduledAt = useWatch({ control, name: "scheduledAt" });
+  const durationText = useWatch({ control, name: "duration" });
 
   const services = useMemo(() => servicesQuery.data ?? [], [servicesQuery.data]);
   const staff = useMemo(() => staffQuery.data ?? [], [staffQuery.data]);
@@ -160,18 +184,19 @@ function AppointmentFormBody({ appointment, defaultDate, onDone }: FormProps) {
   const catalog = useMemo(() => {
     const map = new Map<number, CatalogItem>();
     for (const sv of appointment?.services ?? []) {
-      map.set(sv.id, { id: sv.id, name: sv.name, color: sv.color, duration_minutes: sv.duration_minutes, price: sv.default_price });
+      map.set(sv.id, { id: sv.id, name: sv.name, color: sv.color, price: sv.default_price });
     }
     for (const sv of services) map.set(sv.id, sv);
     return map;
   }, [services, appointment]);
 
   const totals = useMemo(() => serviceTotals(selectedServices, catalog), [selectedServices, catalog]);
-  const totalMinutes = totals.minutes;
+  // La durata vive sull'appuntamento (non sui servizi) e l'ora di fine si calcola solo da qui.
+  const durationMinutes = parseDuration(durationText);
 
   const startDate = fromDateTimeLocalValue(scheduledAt);
   // Senza durate sui servizi la durata è "non specificata": niente ora di fine.
-  const endDate = startDate && totals.hasDuration ? addMinutes(startDate, totalMinutes) : null;
+  const endDate = startDate && durationMinutes > 0 ? addMinutes(startDate, durationMinutes) : null;
 
   function setSelectedServices(next: SelectedService[]) {
     setValue("services", next, { shouldDirty: true });
@@ -194,8 +219,11 @@ function AppointmentFormBody({ appointment, defaultDate, onDone }: FormProps) {
 
   async function persist(values: Values): Promise<Appointment | null> {
     const scheduled = fromDateTimeLocalValue(values.scheduledAt);
+    const minutes = parseDuration(values.duration);
     const base = {
       staff_id: Number(values.staffId),
+      // Numero, oppure null se vuoto (in modifica null toglie la durata).
+      duration_minutes: minutes > 0 ? minutes : null,
       services: values.services.map((sv) => {
         const price = parsePrice(sv.price);
         // Prezzo omesso = il backend copia il listino.
@@ -439,10 +467,55 @@ function AppointmentFormBody({ appointment, defaultDate, onDone }: FormProps) {
             </Button>
           ) : null}
         </div>
+      </Field>
+
+      {/* Durata (facoltativa) */}
+      <Field label="Durata (minuti)" htmlFor="appt-duration" error={errors.duration?.message}>
+        <div className="flex gap-2">
+          <Input
+            id="appt-duration"
+            type="number"
+            inputMode="numeric"
+            min={1}
+            max={MAX_DURATION}
+            step={5}
+            placeholder="Non specificata"
+            aria-invalid={!!errors.duration}
+            className="min-w-0 flex-1"
+            {...register("duration")}
+          />
+          {durationText.trim() !== "" ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              aria-label="Togli la durata"
+              onClick={() => setValue("duration", "", { shouldDirty: true, shouldValidate: true })}
+            >
+              <XIcon />
+            </Button>
+          ) : null}
+        </div>
+        <div role="group" aria-label="Durate rapide" className="flex flex-wrap gap-1.5">
+          {DURATION_SHORTCUTS.map((m) => (
+            <button
+              key={m}
+              type="button"
+              aria-pressed={durationMinutes === m}
+              onClick={() => setValue("duration", String(m), { shouldDirty: true, shouldValidate: true })}
+              className={cn(
+                "h-11 min-w-14 rounded-full border px-3 text-sm font-medium transition-colors md:h-9",
+                durationMinutes === m ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:bg-muted",
+              )}
+            >
+              {m} min
+            </button>
+          ))}
+        </div>
         <p className="text-sm text-muted-foreground" aria-live="polite">
-          {totals.hasDuration ? (
+          {durationMinutes > 0 ? (
             <>
-              Durata totale: <strong className="text-foreground">{formatDuration(totalMinutes)}</strong>
+              Durata: <strong className="text-foreground">{formatDuration(durationMinutes)}</strong>
             </>
           ) : (
             <>Durata non specificata</>
